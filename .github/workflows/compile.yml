@@ -5,17 +5,24 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    # Utilisation d'une image Windows spécifique contenant les outils nécessaires
+    runs-on: windows-2019
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Setup NuGet
+      uses: nuget/setup-nuget@v2
+
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
+    - name: Restore NuGet Packages
+      working-directory: ./CountdownScreensaver
+      run: nuget restore CountdownScreensaver.sln
+
     - name: Compile Application
-      # Le paramètre working-directory indique à GitHub de se placer dans le sous-dossier
       working-directory: ./CountdownScreensaver
       run: |
         msbuild CountdownScreensaver.sln /p:Configuration=Release /p:Platform="Any CPU"
@@ -23,7 +30,6 @@ jobs:
     - name: Prepare Screen Saver File
       shell: powershell
       run: |
-        # Recherche l'exécutable généré dans le sous-dossier et le renomme à la racine
         $exePath = Get-ChildItem -Path .\* -Filter CountdownScreensaver.exe -Recurse | Select-Object -First 1
         if ($exePath) {
             Copy-Item $exePath.FullName ".\CountdownScreensaver.scr"
